@@ -137,12 +137,38 @@ function clean_openshift_pipelines() {
 
 }
 
+function deploy_ui() {
+    echo ">>>> Deploying the User Interface"
+    echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+
+    export UI_ROUTE_HOST=${UI_ROUTE_HOST:-`oc --kubeconfig=${KUBECONFIG_HUB} get route console -n openshift-console -o jsonpath="{.spec.host}"`}
+    export UI_APP_URL=https:\\/\\/${ROUTE_HOST}
+ 
+    echo UI Parameters:
+    echo NAMESPACE: ${UI_NS}
+    echo IMAGE: ${UI_IMAGE}
+    echo ROUTE_HOST ${UI_ROUTE_HOST}
+    echo APP_URL: ${UI_APP_URL}
+
+    # TODO: TLS cretificates
+    echo TODO: TLS certificates
+
+    oc new-project ${UI_NS}
+    cat "${PIPELINES_DIR}/resources/hub/ui-deploy.yaml" | \
+      sed "s/___NAMESPACE___/${UI_NS}/g" | \
+      sed "s/___IMAGE___/${UI_IMAGE}/g" | \
+      sed "s/___ROUTE_HOST___/${UI_ROUTE_HOST}/g" | \
+      sed "s/___APP_URL___/${UI_APP_URL}/g" | \
+      oc --kubeconfig=${KUBECONFIG_HUB} apply -f -
+}
+
 export BASEDIR=$(dirname "$0")
 export BRANCH=${1:-main}
 export WORKDIR=${BASEDIR}/ztp-pipeline-relocatable
 export KUBECONFIG_HUB="${KUBECONFIG}"
 export PIPELINES_DIR=${WORKDIR}/pipelines
-export WORKDIR=${BASEDIR}/ztp-pipeline-relocatable
+export UI_NS=kubeframe-ui
+export UI_IMAGE=${UI_IMAGE:-"quay.io\\/ztpfw\\/ui:latest"}
 
 get_tkn
 clone_ztp
@@ -166,3 +192,5 @@ fi
 create_permissions
 deploy_openshift_pipelines
 deploy_pipeline
+deploy_ui
+
