@@ -1,7 +1,13 @@
 import React from 'react';
+import { ChangeDomainInputType, TlsCertificate } from '../copy-backend-common';
 
-import { IpTripletSelectorValidationType, K8SStateContextData } from './types';
 import {
+  CustomCertsValidationType,
+  IpTripletSelectorValidationType,
+  K8SStateContextData,
+} from './types';
+import {
+  customCertsValidator,
   domainValidator,
   ipTripletAddressValidator,
   ipWithoutDots,
@@ -64,14 +70,36 @@ export const K8SStateContextProvider: React.FC<{
   );
 
   const [domain, setDomain] = React.useState<string>('');
+  const [originalDomain, setOriginalDomain] = React.useState<string>();
   const [domainValidation, setDomainValidation] =
     React.useState<K8SStateContextData['domainValidation']>();
-  const handleSetDomain = React.useCallback((newDomain: string) => {
-    setDomainValidation(domainValidator(newDomain));
-    setDomain(newDomain);
-  }, []);
+  const handleSetDomain = React.useCallback(
+    (newDomain: string) => {
+      setDomainValidation(domainValidator(newDomain));
+      setDomain(newDomain);
+      if (!originalDomain) {
+        // Hint: This is expected to be called within initialDataLoad() only
+        setOriginalDomain(newDomain);
+      }
+    },
+    [originalDomain],
+  );
 
-  const value = React.useMemo(
+  const [customCerts, setCustomCerts] = React.useState<ChangeDomainInputType['customCerts']>({});
+  const [customCertsValidation, setCustomCertsValidation] =
+    React.useState<CustomCertsValidationType>({});
+
+  const setCustomCertificate = React.useCallback(
+    (domain: string, certificate: TlsCertificate) => {
+      const newCustomCerts = { ...customCerts };
+      newCustomCerts[domain] = certificate;
+      setCustomCerts(newCustomCerts);
+      setCustomCertsValidation(customCertsValidator(customCertsValidation, domain, certificate));
+    },
+    [customCertsValidation, customCerts, setCustomCerts],
+  );
+
+  const value: K8SStateContextData = React.useMemo(
     () => ({
       username,
       usernameValidation,
@@ -90,25 +118,34 @@ export const K8SStateContextProvider: React.FC<{
       handleSetIngressIp,
 
       domain,
+      originalDomain,
       domainValidation,
       handleSetDomain,
+
+      customCerts,
+      customCertsValidation,
+      setCustomCertificate,
     }),
     [
-      apiaddr,
-      apiaddrValidation,
-      domain,
-      domainValidation,
-      handleSetApiaddr,
-      handleSetDomain,
-      handleSetIngressIp,
-      handleSetPassword,
-      handleSetUsername,
-      ingressIp,
-      ingressIpValidation,
-      password,
-      passwordValidation,
       username,
       usernameValidation,
+      handleSetUsername,
+      password,
+      passwordValidation,
+      handleSetPassword,
+      apiaddr,
+      apiaddrValidation,
+      handleSetApiaddr,
+      ingressIp,
+      ingressIpValidation,
+      handleSetIngressIp,
+      domain,
+      originalDomain,
+      domainValidation,
+      handleSetDomain,
+      customCerts,
+      customCertsValidation,
+      setCustomCertificate,
     ],
   );
 

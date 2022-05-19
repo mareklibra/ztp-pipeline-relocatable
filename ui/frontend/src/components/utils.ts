@@ -1,4 +1,6 @@
+import { FormGroupProps } from '@patternfly/react-core';
 import { DNS_NAME_REGEX, USERNAME_REGEX } from '../backend-shared';
+import { TlsCertificate } from '../copy-backend-common';
 import { isPasswordPolicyMet } from './PasswordPage/utils';
 import { IpTripletSelectorValidationType, K8SStateContextData } from './types';
 
@@ -60,18 +62,51 @@ export const passwordValidator = (pwd: string): K8SStateContextData['passwordVal
   return isPasswordPolicyMet(pwd);
 };
 
-/*
-export const ipWithDots = (ip: string): string =>
-  (
-    ip.substring(0, 3) +
-    '.' +
-    ip.substring(3, 6) +
-    '.' +
-    ip.substring(6, 9) +
-    '.' +
-    ip.substring(9, 12)
-  ).replaceAll(' ', '');
-*/
+export const customCertsValidator = (
+  oldValidation: K8SStateContextData['customCertsValidation'],
+  domain: string,
+  certificate: TlsCertificate,
+): K8SStateContextData['customCertsValidation'] => {
+  const validation: K8SStateContextData['customCertsValidation'] = { ...oldValidation };
+
+  let certValidated: FormGroupProps['validated'] = 'default';
+  let certLabelHelperText = '';
+  let certLabelInvalid = '';
+  if (!certificate?.['tls.crt'] && certificate?.['tls.key']) {
+    certValidated = 'error';
+    certLabelInvalid = 'Both key and certificate must be provided at once.';
+  } else if (!certificate?.['tls.crt']) {
+    certLabelHelperText =
+      'When not uploaded, a self-signed certificate will be generated automatically.';
+  }
+
+  let keyValidated: FormGroupProps['validated'] = 'default';
+  let keyLabelInvalid = '';
+  if (certificate?.['tls.crt'] && !certificate?.['tls.key']) {
+    keyValidated = 'error';
+    keyLabelInvalid = 'Both key and certificate must be provided at once.';
+  }
+
+  if (certificate?.['tls.crt'] && certificate?.['tls.key']) {
+    // TODO: more in-depth content check??
+    // -----BEGIN CERTIFICATE-----
+    // -----BEGIN PRIVATE KEY-----
+    certValidated = 'success';
+    keyValidated = 'success';
+  }
+
+  validation[domain] = {
+    certValidated,
+    certLabelHelperText,
+    certLabelInvalid,
+
+    keyValidated,
+    keyLabelInvalid,
+  };
+
+  return validation;
+};
+
 export const ipWithoutDots = (ip?: string): string => {
   if (ip) {
     const triplets = ip.split('.');

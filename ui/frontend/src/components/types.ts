@@ -1,4 +1,6 @@
-import { TextInputProps } from '@patternfly/react-core';
+import { FormGroupProps, TextInputProps } from '@patternfly/react-core';
+import { TlsCertificate } from '../copy-backend-common';
+import { ChangeDomainInputType } from '../backend-shared';
 
 export type IpTripletIndex = 0 | 1 | 2 | 3;
 
@@ -19,6 +21,17 @@ export type IpTripletSelectorValidationType = {
   triplets: IpTripletProps['validated'][];
 };
 
+export type CustomCertsValidationType = {
+  [key: string]: {
+    certValidated: FormGroupProps['validated'];
+    certLabelHelperText?: string;
+    certLabelInvalid?: string;
+
+    keyValidated: FormGroupProps['validated'];
+    keyLabelInvalid?: string;
+  };
+};
+
 export type K8SStateContextData = {
   username: string;
   usernameValidation?: string; // just a message or empty
@@ -37,6 +50,11 @@ export type K8SStateContextData = {
   handleSetIngressIp: (newIp: string) => void;
 
   domain: string;
+  originalDomain?: string;
   handleSetDomain: (newDomain: string) => void;
   domainValidation?: string;
+
+  customCerts: ChangeDomainInputType['customCerts'];
+  setCustomCertificate: (domain: string, certificate: TlsCertificate) => void;
+  customCertsValidation: CustomCertsValidationType;
 };
